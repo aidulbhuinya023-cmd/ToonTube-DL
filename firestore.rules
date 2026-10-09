@@ -1,0 +1,104 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'createdAt'])
+        && data.uid is string && data.uid.size() <= 128
+        && data.email is string && data.email.size() <= 256
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 500))
+        && data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidDownloadJob(data) {
+      return data.keys().hasAll(['id', 'userId', 'url', 'mediaType', 'status', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && data.url is string && data.url.size() <= 2048
+        && data.mediaType is string && (data.mediaType == 'video' || data.mediaType == 'audio')
+        && data.status is string && (data.status == 'queued' || data.status == 'downloading' || data.status == 'processing' || data.status == 'completed' || data.status == 'error')
+        && (!('title' in data) || (data.title is string && data.title.size() <= 500))
+        && (!('extractor' in data) || (data.extractor is string && data.extractor.size() <= 100))
+        && (!('formatSelection' in data) || (data.formatSelection is string && data.formatSelection.size() <= 100))
+        && (!('quality' in data) || (data.quality is string && data.quality.size() <= 50))
+        && (!('audioFormat' in data) || (data.audioFormat is string && data.audioFormat.size() <= 20))
+        && (!('subtitles' in data) || (data.subtitles is bool))
+        && (!('subLangs' in data) || (data.subLangs is string && data.subLangs.size() <= 50))
+        && (!('sponsorBlockAction' in data) || (data.sponsorBlockAction is string && data.sponsorBlockAction.size() <= 50))
+        && (!('sponsorBlockCategories' in data) || (data.sponsorBlockCategories is string && data.sponsorBlockCategories.size() <= 200))
+        && (!('cliCommand' in data) || (data.cliCommand is string && data.cliCommand.size() <= 2000))
+        && (!('progress' in data) || (data.progress is number))
+        && (!('fileSize' in data) || (data.fileSize is string && data.fileSize.size() <= 50))
+        && (!('downloadSpeed' in data) || (data.downloadSpeed is string && data.downloadSpeed.size() <= 50))
+        && (!('eta' in data) || (data.eta is string && data.eta.size() <= 50))
+        && (!('outputPath' in data) || (data.outputPath is string && data.outputPath.size() <= 500))
+        && (!('isPlaylist' in data) || (data.isPlaylist is bool))
+        && (!('playlistCount' in data) || (data.playlistCount is number))
+        && (!('error' in data) || (data.error is string && data.error.size() <= 1000))
+        && data.createdAt is string && data.createdAt.size() <= 64
+        && data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidCliPreset(data) {
+      return data.keys().hasAll(['id', 'userId', 'name', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() <= 128
+        && data.userId is string && data.userId.size() <= 128
+        && data.name is string && data.name.size() <= 100
+        && (!('description' in data) || (data.description is string && data.description.size() <= 300))
+        && (!('mediaType' in data) || (data.mediaType is string && data.mediaType.size() <= 20))
+        && (!('formatQuality' in data) || (data.formatQuality is string && data.formatQuality.size() <= 50))
+        && (!('audioFormat' in data) || (data.audioFormat is string && data.audioFormat.size() <= 20))
+        && (!('extractAudio' in data) || (data.extractAudio is bool))
+        && (!('embedSubs' in data) || (data.embedSubs is bool))
+        && (!('subLangs' in data) || (data.subLangs is string && data.subLangs.size() <= 50))
+        && (!('sponsorBlock' in data) || (data.sponsorBlock is string && data.sponsorBlock.size() <= 100))
+        && (!('extraArgs' in data) || (data.extraArgs is string && data.extraArgs.size() <= 500))
+        && data.createdAt is string && data.createdAt.size() <= 64
+        && data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && isValidUserProfile(request.resource.data) && request.resource.data.uid == userId;
+      allow update: if isOwner(userId) && isValidUserProfile(request.resource.data) && request.resource.data.uid == userId;
+      allow delete: if isOwner(userId);
+
+      match /downloads/{downloadId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(downloadId) && isValidDownloadJob(request.resource.data) && request.resource.data.userId == userId;
+        allow update: if isOwner(userId) && isValidId(downloadId) && isValidDownloadJob(request.resource.data) && request.resource.data.userId == userId;
+        allow delete: if isOwner(userId);
+      }
+
+      match /presets/{presetId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(presetId) && isValidCliPreset(request.resource.data) && request.resource.data.userId == userId;
+        allow update: if isOwner(userId) && isValidId(presetId) && isValidCliPreset(request.resource.data) && request.resource.data.userId == userId;
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "name": "yt-dlp Studio CLI & Media Downloader",
+  "description": "Advanced yt-dlp command-line suite and media downloader with SponsorBlock segment removal, subtitle extraction, audio MP3 converter, format inspector, and Firebase cloud sync.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

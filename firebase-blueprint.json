@@ -1,0 +1,86 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile document",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string", "maxLength": 100 },
+        "photoURL": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "createdAt"]
+    },
+    "DownloadJob": {
+      "title": "DownloadJob",
+      "description": "Download task record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "url": { "type": "string", "maxLength": 2048 },
+        "title": { "type": "string", "maxLength": 500 },
+        "extractor": { "type": "string", "maxLength": 100 },
+        "mediaType": { "type": "string", "enum": ["video", "audio"] },
+        "formatSelection": { "type": "string", "maxLength": 100 },
+        "quality": { "type": "string", "maxLength": 50 },
+        "audioFormat": { "type": "string", "enum": ["mp3", "m4a", "flac", "opus", "wav", "none"] },
+        "subtitles": { "type": "boolean" },
+        "subLangs": { "type": "string", "maxLength": 50 },
+        "sponsorBlockAction": { "type": "string", "enum": ["none", "remove", "mark"] },
+        "sponsorBlockCategories": { "type": "string", "maxLength": 200 },
+        "cliCommand": { "type": "string", "maxLength": 2000 },
+        "status": { "type": "string", "enum": ["queued", "downloading", "processing", "completed", "error"] },
+        "progress": { "type": "number" },
+        "fileSize": { "type": "string", "maxLength": 50 },
+        "downloadSpeed": { "type": "string", "maxLength": 50 },
+        "eta": { "type": "string", "maxLength": 50 },
+        "outputPath": { "type": "string", "maxLength": 500 },
+        "isPlaylist": { "type": "boolean" },
+        "playlistCount": { "type": "number" },
+        "error": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "url", "mediaType", "status", "createdAt", "updatedAt"]
+    },
+    "CliPreset": {
+      "title": "CliPreset",
+      "description": "Saved CLI preset configuration",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "description": { "type": "string", "maxLength": 300 },
+        "mediaType": { "type": "string", "enum": ["video", "audio"] },
+        "formatQuality": { "type": "string", "maxLength": 50 },
+        "audioFormat": { "type": "string", "maxLength": 20 },
+        "extractAudio": { "type": "boolean" },
+        "embedSubs": { "type": "boolean" },
+        "subLangs": { "type": "string", "maxLength": 50 },
+        "sponsorBlock": { "type": "string", "maxLength": 100 },
+        "extraArgs": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "name", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document"
+    },
+    "/users/{userId}/downloads/{downloadId}": {
+      "schema": "DownloadJob",
+      "description": "User download queue and completed downloads"
+    },
+    "/users/{userId}/presets/{presetId}": {
+      "schema": "CliPreset",
+      "description": "User saved command presets"
+    }
+  }
+}
